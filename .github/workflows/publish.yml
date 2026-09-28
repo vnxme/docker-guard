@@ -6,9 +6,20 @@ on:
       - "main"
     tags:
       - 'v*.*.*'
+  pull_request:
+    branches:
+      - "main"
+  schedule:
+    # Weekly rebuild to pick up updates of the base images and Alpine packages
+    - cron: "0 6 * * 1"
 
 env:
   IMAGE_NAME: ${{ github.repository_owner }}/guard
+
+concurrency:
+  group: publish-${{ github.ref }}
+  # Cancel outdated pull request builds, but let pushes to registries finish
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   publish:
@@ -19,9 +30,7 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v5
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -47,24 +56,24 @@ jobs:
       - name: Generate metadata
         id: meta
         uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
-          flavor: latest=true
+          flavor: latest=auto
           images: |
             ${{ env.IMAGE_NAME }}
             ghcr.io/${{ env.IMAGE_NAME }}
           tags: |
-            type=schedule
+            type=schedule,pattern=weekly
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=match,pattern=v(\d+\.\d+).*,group=1
-            type=match,pattern=v(\d+).*,group=1
             type=sha
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: |
@@ -76,3 +85,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Weekly rebuilds must not reuse cached layers, otherwise apk packages are not updated
+          no-cache: ${{ github.event_name == 'schedule' }}

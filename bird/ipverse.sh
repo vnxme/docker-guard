@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # Resources:
-# https://bgp.he.net
-# https://bgp.tools
+# https://github.com/ipverse/as-ip-blocks
+# https://github.com/ipverse/geo-ip-blocks
 
 PROV="ipverse"
 URL_AS="https://github.com/ipverse/as-ip-blocks/releases/download/latest/as-ip-blocks.tar.gz"
@@ -19,11 +19,13 @@ FILE_GEO="${DIR_PROV}/geo-ip-blocks.tar.gz"
 FILE_AS_MAP="/etc/bird/as.mapping.txt"
 FILE_ISO_MAP="/etc/bird/iso.mapping.txt"
 
+CR="$(printf '\r')"
+
 if [ ! -d "${DIR_CONF}" ]; then
 	echo "Error: Directory ${DIR_CONF} doesn't exist. Exiting."
 	exit 1
 else
-	rm "${DIR_CONF}"/*.${PROV}.conf 2>/dev/null
+	rm -f "${DIR_CONF}"/*.${PROV}.conf
 fi
 
 if [ ! -d "${DIR_PROV}" ]; then
@@ -41,58 +43,72 @@ if [ ! -s "${FILE_ISO_MAP}" ]; then
 fi
 
 if [ ! -s "${FILE_AS}" ] || [ "$(($(date +%s)-$(date -r "${FILE_AS}" +%s)))" -gt 86400 ]; then
-	if ! curl --fail --silent --location --user-agent "${AGENT}" --output "${FILE_AS}" "${URL_AS}"; then
+	if ! curl --fail --silent --location --user-agent "${AGENT}" --output "${FILE_AS}.tmp" "${URL_AS}" || ! mv -f "${FILE_AS}.tmp" "${FILE_AS}"; then
+		rm -f "${FILE_AS}.tmp"
 		echo "Error: File ${FILE_AS} is missing or obsolete and can't be downloaded. Exiting."
 		exit 1
-	else
-		FILE_EXTRACT="${DIR_PROV}/as.list.txt"
-		truncate -s 0 "${FILE_EXTRACT}"
-
-		while IFS= read -r LINE || [ -n "${LINE}" ]; do
-			IFS=" " read -r ID GROUP NUMBERS <<-EOF
-			${LINE}
-			EOF
-
-			if [ -n "${ID}" ] && [ -n "${GROUP}" ] && [ -n "${NUMBERS}" ]; then
-				for NUMBER in $(echo "${NUMBERS}" | tr "," "\n"); do
-					echo "as/${NUMBER}/ipv4-aggregated.txt" >> "${FILE_EXTRACT}"
-					echo "as/${NUMBER}/ipv6-aggregated.txt" >> "${FILE_EXTRACT}"
-				done
-			fi
-		done < "${FILE_AS_MAP}"
-
-		tar -xzf "${FILE_AS}" -C "${DIR_PROV}" -T "${FILE_EXTRACT}"
 	fi
 fi
 
 if [ ! -s "${FILE_GEO}" ] || [ "$(($(date +%s)-$(date -r "${FILE_GEO}" +%s)))" -gt 86400 ]; then
-	if ! curl --fail --silent --location --user-agent "${AGENT}" --output "${FILE_GEO}" "${URL_GEO}"; then
+	if ! curl --fail --silent --location --user-agent "${AGENT}" --output "${FILE_GEO}.tmp" "${URL_GEO}" || ! mv -f "${FILE_GEO}.tmp" "${FILE_GEO}"; then
+		rm -f "${FILE_GEO}.tmp"
 		echo "Error: File ${FILE_GEO} is missing or obsolete and can't be downloaded. Exiting."
 		exit 1
-	else
-		FILE_EXTRACT="${DIR_PROV}/geo.list.txt"
-		truncate -s 0 "${FILE_EXTRACT}"
-
-		while IFS= read -r LINE || [ -n "${LINE}" ]; do
-			IFS=" " read -r ID GROUP CODES <<-EOF
-			${LINE}
-			EOF
-
-			if [ -n "${ID}" ] && [ -n "${GROUP}" ] && [ -n "${CODES}" ]; then
-				for CODE in $(echo "${CODES}" | tr "," "\n"); do
-					CODE_LC="$(echo "${CODE}" | tr '[:upper:]' '[:lower:]')"
-					echo "country/${CODE_LC}/${CODE_LC}-ipv4.txt" >> "${FILE_EXTRACT}"
-					echo "country/${CODE_LC}/${CODE_LC}-ipv6.txt" >> "${FILE_EXTRACT}"
-				done
-			fi
-		done < "${FILE_ISO_MAP}"
-
-		tar -xzf "${FILE_GEO}" -C "${DIR_PROV}" -T "${FILE_EXTRACT}"
 	fi
 fi
 
+# Extract on every run, so that changes to the mapping files are picked up without waiting for a new download
+FILE_EXTRACT="${DIR_PROV}/as.list.txt"
 while IFS= read -r LINE || [ -n "${LINE}" ]; do
-	IFS=" " read -r ID GROUP NUMBERS <<-EOF
+	LINE="${LINE%"${CR}"}" # strip CR of CRLF line endings
+	LINE="${LINE%%#*}" # strip comments
+
+	read -r ID GROUP NUMBERS <<-EOF
+	${LINE}
+	EOF
+
+	if [ -n "${ID}" ] && [ -n "${GROUP}" ] && [ -n "${NUMBERS}" ]; then
+		for NUMBER in $(echo "${NUMBERS}" | tr "," "\n"); do
+			echo "as/${NUMBER}/ipv4-aggregated.txt"
+			echo "as/${NUMBER}/ipv6-aggregated.txt"
+		done
+	fi
+done < "${FILE_AS_MAP}" | sort -u > "${FILE_EXTRACT}"
+
+rm -rf "${DIR_PROV}/as"
+if [ -s "${FILE_EXTRACT}" ] && ! tar -xzf "${FILE_AS}" -C "${DIR_PROV}" -T "${FILE_EXTRACT}"; then
+	echo "Warning: Some entries of ${FILE_EXTRACT} can't be extracted from ${FILE_AS}."
+fi
+
+FILE_EXTRACT="${DIR_PROV}/geo.list.txt"
+while IFS= read -r LINE || [ -n "${LINE}" ]; do
+	LINE="${LINE%"${CR}"}" # strip CR of CRLF line endings
+	LINE="${LINE%%#*}" # strip comments
+
+	read -r ID GROUP CODES <<-EOF
+	${LINE}
+	EOF
+
+	if [ -n "${ID}" ] && [ -n "${GROUP}" ] && [ -n "${CODES}" ]; then
+		for CODE in $(echo "${CODES}" | tr "," "\n"); do
+			CODE_LC="$(echo "${CODE}" | tr '[:upper:]' '[:lower:]')"
+			echo "country/${CODE_LC}/${CODE_LC}-ipv4.txt"
+			echo "country/${CODE_LC}/${CODE_LC}-ipv6.txt"
+		done
+	fi
+done < "${FILE_ISO_MAP}" | sort -u > "${FILE_EXTRACT}"
+
+rm -rf "${DIR_PROV}/country"
+if [ -s "${FILE_EXTRACT}" ] && ! tar -xzf "${FILE_GEO}" -C "${DIR_PROV}" -T "${FILE_EXTRACT}"; then
+	echo "Warning: Some entries of ${FILE_EXTRACT} can't be extracted from ${FILE_GEO}."
+fi
+
+while IFS= read -r LINE || [ -n "${LINE}" ]; do
+	LINE="${LINE%"${CR}"}" # strip CR of CRLF line endings
+	LINE="${LINE%%#*}" # strip comments
+
+	read -r ID GROUP NUMBERS <<-EOF
 	${LINE}
 	EOF
 
@@ -120,7 +136,7 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 
 		FILE_PROTO="${DIR_CONF}/${GROUP_LC}.proto.${PROV}.conf"
 		cat <<-EOF > "${FILE_PROTO}"
-		protocol static s4_${GROUP_LC} {
+		protocol static s4_${PROV}_${GROUP_LC} {
 			description "${GROUP} AS ${NUMBERS} IPv4";
 			ipv4 {
 				table mixed4;
@@ -135,7 +151,7 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			include "${DIR_CONF}/${GROUP_LC}.ipv4.${PROV}.conf";
 		}
 
-		protocol static s6_${GROUP_LC} {
+		protocol static s6_${PROV}_${GROUP_LC} {
 			description "${GROUP} AS ${NUMBERS} IPv6";
 			ipv6 {
 				table mixed6;
@@ -154,7 +170,10 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 done < "${FILE_AS_MAP}"
 
 while IFS= read -r LINE || [ -n "${LINE}" ]; do
-	IFS=" " read -r ID GROUP CODES <<-EOF
+	LINE="${LINE%"${CR}"}" # strip CR of CRLF line endings
+	LINE="${LINE%%#*}" # strip comments
+
+	read -r ID GROUP CODES <<-EOF
 	${LINE}
 	EOF
 
@@ -182,7 +201,7 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 
 		FILE_PROTO="${DIR_CONF}/${GROUP_LC}.proto.${PROV}.conf"
 		cat <<-EOF > "${FILE_PROTO}"
-		protocol static s4_${GROUP_LC} {
+		protocol static s4_${PROV}_${GROUP_LC} {
 			description "${GROUP} ${CODES} IPv4";
 			ipv4 {
 				table mixed4;
@@ -197,7 +216,7 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			include "${DIR_CONF}/${GROUP_LC}.ipv4.${PROV}.conf";
 		}
 
-		protocol static s6_${GROUP_LC} {
+		protocol static s6_${PROV}_${GROUP_LC} {
 			description "${GROUP} ${CODES} IPv6";
 			ipv6 {
 				table mixed6;

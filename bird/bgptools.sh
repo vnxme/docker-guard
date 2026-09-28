@@ -15,17 +15,19 @@ DIR_PROV="/etc/bird/${PROV}"
 FILE_MAP="/etc/bird/as.mapping.txt"
 FILE_TAB="${DIR_PROV}/table.txt"
 
+CR="$(printf '\r')"
+
 if [ ! -d "${DIR_CONF}" ]; then
 	echo "Error: Directory ${DIR_CONF} doesn't exist. Exiting."
 	exit 1
 else
-	rm "${DIR_CONF}"/*.${PROV}.conf
+	rm -f "${DIR_CONF}"/*.${PROV}.conf
 fi
 
 if [ ! -d "${DIR_PROV}" ]; then
 	mkdir -p "${DIR_PROV}"
 else
-	rm "${DIR_PROV}"/*.table.txt
+	rm -f "${DIR_PROV}"/*.table.txt
 fi
 
 if [ ! -f "${FILE_MAP}" ]; then
@@ -35,14 +37,18 @@ fi
 
 
 if [ ! -f "${FILE_TAB}" ] || [ "$(($(date +%s)-$(date -r "${FILE_TAB}" +%s)))" -gt 86400 ]; then
-	if ! curl --fail --silent --location --user-agent "${AGENT}" --output "${FILE_TAB}" "${URL}"; then
+	if ! curl --fail --silent --location --user-agent "${AGENT}" --output "${FILE_TAB}.tmp" "${URL}" || ! mv -f "${FILE_TAB}.tmp" "${FILE_TAB}"; then
+		rm -f "${FILE_TAB}.tmp"
 		echo "Error: File ${FILE_TAB} is missing or obsolete and can't be downloaded. Exiting."
 		exit 1
 	fi
 fi
 
 while IFS= read -r LINE || [ -n "${LINE}" ]; do
-	IFS=" " read -r ID GROUP NUMBERS <<-EOF
+	LINE="${LINE%"${CR}"}" # strip CR of CRLF line endings
+	LINE="${LINE%%#*}" # strip comments
+
+	read -r ID GROUP NUMBERS <<-EOF
 	${LINE}
 	EOF
 
@@ -68,7 +74,7 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 
 		FILE_PROTO="${DIR_CONF}/${GROUP_LC}.proto.${PROV}.conf"
 		cat <<-EOF > "${FILE_PROTO}"
-		protocol static s4_${GROUP_LC} {
+		protocol static s4_${PROV}_${GROUP_LC} {
 			description "${GROUP} AS ${NUMBERS} IPv4";
 			ipv4 {
 				table mixed4;
@@ -83,7 +89,7 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			include "${DIR_CONF}/${GROUP_LC}.ipv4.${PROV}.conf";
 		}
 
-		protocol static s6_${GROUP_LC} {
+		protocol static s6_${PROV}_${GROUP_LC} {
 			description "${GROUP} AS ${NUMBERS} IPv6";
 			ipv6 {
 				table mixed6;
