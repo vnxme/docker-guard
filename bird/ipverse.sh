@@ -135,35 +135,35 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 		done
 
 		FILE_PROTO="${DIR_CONF}/${GROUP_LC}.proto.${PROV}.conf"
-		cat <<-EOF > "${FILE_PROTO}"
-		protocol static s4_${PROV}_${GROUP_LC} {
-			description "${GROUP} AS ${NUMBERS} IPv4";
-			ipv4 {
-				table mixed4;
-				import filter {
-					bgp_large_community.add((bird_asn, tag_fam, 4));
-					bgp_large_community.add((bird_asn, tag_asn, ${ID}));
-					accept;
-				};
-				export none;
-			};
-			include "${DIR_CONF}/${GROUP_LC}.ipv4.${PROV}.conf";
-		}
+		cat <<EOF > "${FILE_PROTO}"
+protocol static s4_${PROV}_${GROUP_LC} {
+	description "${GROUP} AS ${NUMBERS} IPv4";
+	ipv4 {
+		table mixed4;
+		import filter {
+			bgp_large_community.add((bird_asn, tag_fam, 4));
+			bgp_large_community.add((bird_asn, tag_asn, ${ID}));
+			accept;
+		};
+		export none;
+	};
+	include "${DIR_CONF}/${GROUP_LC}.ipv4.${PROV}.conf";
+}
 
-		protocol static s6_${PROV}_${GROUP_LC} {
-			description "${GROUP} AS ${NUMBERS} IPv6";
-			ipv6 {
-				table mixed6;
-				import filter {
-					bgp_large_community.add((bird_asn, tag_fam, 6));
-					bgp_large_community.add((bird_asn, tag_asn, ${ID}));
-					accept;
-				};
-				export none;
-			};
-			include "${DIR_CONF}/${GROUP_LC}.ipv6.${PROV}.conf";
-		}
-		EOF
+protocol static s6_${PROV}_${GROUP_LC} {
+	description "${GROUP} AS ${NUMBERS} IPv6";
+	ipv6 {
+		table mixed6;
+		import filter {
+			bgp_large_community.add((bird_asn, tag_fam, 6));
+			bgp_large_community.add((bird_asn, tag_asn, ${ID}));
+			accept;
+		};
+		export none;
+	};
+	include "${DIR_CONF}/${GROUP_LC}.ipv6.${PROV}.conf";
+}
+EOF
 	fi
 done < "${FILE_AS_MAP}"
 
@@ -198,35 +198,35 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 		done
 
 		FILE_PROTO="${DIR_CONF}/${GROUP_LC}.proto.${PROV}.conf"
-		cat <<-EOF > "${FILE_PROTO}"
-		protocol static s4_${PROV}_${GROUP_LC} {
-			description "${GROUP} ${CODES} IPv4";
-			ipv4 {
-				table mixed4;
-				import filter {
-					bgp_large_community.add((bird_asn, tag_fam, 4));
-					bgp_large_community.add((bird_asn, tag_geo, ${ID}));
-					accept;
-				};
-				export none;
-			};
-			include "${DIR_CONF}/${GROUP_LC}.ipv4.${PROV}.conf";
-		}
+		cat <<EOF > "${FILE_PROTO}"
+protocol static s4_${PROV}_${GROUP_LC} {
+	description "${GROUP} ${CODES} IPv4";
+	ipv4 {
+		table mixed4;
+		import filter {
+			bgp_large_community.add((bird_asn, tag_fam, 4));
+			bgp_large_community.add((bird_asn, tag_geo, ${ID}));
+			accept;
+		};
+		export none;
+	};
+	include "${DIR_CONF}/${GROUP_LC}.ipv4.${PROV}.conf";
+}
 
-		protocol static s6_${PROV}_${GROUP_LC} {
-			description "${GROUP} ${CODES} IPv6";
-			ipv6 {
-				table mixed6;
-				import filter {
-					bgp_large_community.add((bird_asn, tag_fam, 6));
-					bgp_large_community.add((bird_asn, tag_geo, ${ID}));
-					accept;
-				};
-				export none;
-			};
-			include "${DIR_CONF}/${GROUP_LC}.ipv6.${PROV}.conf";
-		}
-		EOF
+protocol static s6_${PROV}_${GROUP_LC} {
+	description "${GROUP} ${CODES} IPv6";
+	ipv6 {
+		table mixed6;
+		import filter {
+			bgp_large_community.add((bird_asn, tag_fam, 6));
+			bgp_large_community.add((bird_asn, tag_geo, ${ID}));
+			accept;
+		};
+		export none;
+	};
+	include "${DIR_CONF}/${GROUP_LC}.ipv6.${PROV}.conf";
+}
+EOF
 	fi
 done < "${FILE_ISO_MAP}"
 
