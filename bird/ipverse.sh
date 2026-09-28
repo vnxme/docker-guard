@@ -125,12 +125,12 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 
 			FILE_TAB="${DIR_PROV}/as/${NUMBER}/ipv4-aggregated.txt"
 			if [ -s "${FILE_TAB}" ]; then
-				grep -E "^[^#]" "${FILE_TAB}" | awk '{printf "route %s unreachable;\n", $1}' >> "${FILE_IPV4}"
+				grep -E "^[^#]" "${FILE_TAB}" | awk -v asn="${NUMBER}" '{printf "route %s unreachable { asn_origin = %s; };\n", $1, asn}' >> "${FILE_IPV4}"
 			fi
 
 			FILE_TAB="${DIR_PROV}/as/${NUMBER}/ipv6-aggregated.txt"
 			if [ -s "${FILE_TAB}" ]; then
-				grep -E "^[^#]" "${FILE_TAB}" | awk '{printf "route %s unreachable;\n", $1}' >> "${FILE_IPV6}"
+				grep -E "^[^#]" "${FILE_TAB}" | awk -v asn="${NUMBER}" '{printf "route %s unreachable { asn_origin = %s; };\n", $1, asn}' >> "${FILE_IPV6}"
 			fi
 		done
 
@@ -141,9 +141,8 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			ipv4 {
 				table mixed4;
 				import filter {
-					bgp_community.add((group_main, tag_ip4));
-					bgp_community.add((group_main, tag_asn));
-					bgp_community.add((group_main, ${ID}));
+					bgp_large_community.add((bird_asn, tag_fam, 4));
+					bgp_large_community.add((bird_asn, tag_asn, ${ID}));
 					accept;
 				};
 				export none;
@@ -156,9 +155,8 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			ipv6 {
 				table mixed6;
 				import filter {
-					bgp_community.add((group_main, tag_ip6));
-					bgp_community.add((group_main, tag_asn));
-					bgp_community.add((group_main, ${ID}));
+					bgp_large_community.add((bird_asn, tag_fam, 6));
+					bgp_large_community.add((bird_asn, tag_asn, ${ID}));
 					accept;
 				};
 				export none;
@@ -206,9 +204,8 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			ipv4 {
 				table mixed4;
 				import filter {
-					bgp_community.add((group_main, tag_ip4));
-					bgp_community.add((group_main, tag_geo));
-					bgp_community.add((group_geo, ${ID}));
+					bgp_large_community.add((bird_asn, tag_fam, 4));
+					bgp_large_community.add((bird_asn, tag_geo, ${ID}));
 					accept;
 				};
 				export none;
@@ -221,9 +218,8 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			ipv6 {
 				table mixed6;
 				import filter {
-					bgp_community.add((group_main, tag_ip6));
-					bgp_community.add((group_main, tag_geo));
-					bgp_community.add((group_geo, ${ID}));
+					bgp_large_community.add((bird_asn, tag_fam, 6));
+					bgp_large_community.add((bird_asn, tag_geo, ${ID}));
 					accept;
 				};
 				export none;

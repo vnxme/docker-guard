@@ -1,6 +1,6 @@
 # docker-guard
 
-A Docker image of **BGP Guard**: a [BIRD](https://bird.network.cz/) route server that publishes the IP prefixes of popular services and countries over BGP, tagged with communities. Your router peers with it, picks the groups it needs by community, and routes that traffic however you like, for example through a VPN tunnel.
+A Docker image of **BGP Guard**: a [BIRD](https://bird.network.cz/) route server that publishes the IP prefixes of popular services and countries over BGP, tagged with large communities. Your router peers with it, picks the groups it needs by community, and routes that traffic however you like, for example through a VPN tunnel.
 
 - Prefixes of 30+ services (Google, Microsoft, Amazon, Cloudflare, Telegram, …) grouped by the AS numbers they announce from
 - Prefixes of countries, selectable from the full ISO 3166-1 list
@@ -43,7 +43,7 @@ protocol bgp guard {
 	neighbor 203.0.113.10 as 65000;
 	multihop;
 	ipv4 {
-		import where (65000, 240) ~ bgp_community || (65001, 643) ~ bgp_community;
+		import where (65000, 10, 240) ~ bgp_large_community || (65000, 11, 643) ~ bgp_large_community;
 		export none;
 	};
 }
@@ -53,17 +53,16 @@ The routes' next hop is the server itself, so in practice your import filter sho
 
 ## Communities
 
-The values below assume the default `BIRD_ASN=65000`; replace `65000` with your AS number and `65001` with your AS number + 1.
+Routes carry [large communities](https://www.rfc-editor.org/rfc/rfc8092) in the form `(ASN, tag, value)`, where `ASN` is `BIRD_ASN` (32-bit AS numbers work). The values below assume the default `BIRD_ASN=65000`.
 
-| Community         | Meaning                                                                 |
-|-------------------|-------------------------------------------------------------------------|
-| `65000:4`         | IPv4 route                                                              |
-| `65000:6`         | IPv6 route                                                              |
-| `65000:10`        | Route comes from an AS group                                            |
-| `65000:11`        | Route comes from a country                                              |
-| `65000:<ID>`      | AS group, `<ID>` from [as.mapping.txt](bird/as.mapping.txt)             |
-| `65001:<ISO>`     | Country, `<ISO>` is its ISO 3166-1 numeric code, e.g. `65001:643` Russia |
-| `65000:100`       | Custom static route (see [Custom routes](#custom-routes))               |
+| Community             | Meaning                                                                        |
+|-----------------------|--------------------------------------------------------------------------------|
+| `65000:0:<AS number>` | Origin AS number of a route from an AS group, e.g. `65000:0:15169`             |
+| `65000:1:4`           | IPv4 route                                                                     |
+| `65000:1:6`           | IPv6 route                                                                     |
+| `65000:10:<ID>`       | AS group, `<ID>` from [as.mapping.txt](bird/as.mapping.txt), e.g. `65000:10:240` Google |
+| `65000:11:<ID>`       | Country group, `<ID>` from [iso.mapping.txt](bird/iso.mapping.txt), e.g. `65000:11:643` Russia |
+| `65000:10:100`        | Custom static route (see [Custom routes](#custom-routes))                      |
 
 ### AS groups
 
@@ -111,14 +110,14 @@ Both files have one group per line, `ID Name items`:
 
 - `#` starts a comment, either on its own line or after an entry.
 - `Name` may only contain letters, digits and `_`, and must be unique across both files.
-- IDs in `as.mapping.txt` must not be 4, 6, 10, 11 or 100, which are used by other communities.
+- IDs are numbers from 0 to 4294967295; `100` in `as.mapping.txt` is taken by custom static routes.
 - IDs in `iso.mapping.txt` are by convention the ISO 3166-1 numeric codes.
 
 Changes are applied on the next update, or immediately after `docker restart guard`.
 
 ### Custom routes
 
-Files named `*.ipv4.generic.conf` and `*.ipv6.generic.conf` in `/etc/bird/static.conf.d/` are loaded as extra routes tagged `65000:100`:
+Files named `*.ipv4.generic.conf` and `*.ipv6.generic.conf` in `/etc/bird/static.conf.d/` are loaded as extra routes tagged `65000:10:100`:
 
 ```
 route 198.51.100.0/24 unreachable;

@@ -68,8 +68,8 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 		for NUMBER in $(echo "${NUMBERS}" | tr "," "\n"); do
 			echo "# AS${NUMBER}" >> "${FILE_IPV4}"
 			echo "# AS${NUMBER}" >> "${FILE_IPV6}"
-			grep -E ".*\..* ${NUMBER}\$" "${FILE_GROUP}" | awk '{printf "route %s unreachable;\n", $1}' >> "${FILE_IPV4}"
-			grep -E ".*:.* ${NUMBER}\$" "${FILE_GROUP}" | awk '{printf "route %s unreachable;\n", $1}' >> "${FILE_IPV6}"
+			grep -E ".*\..* ${NUMBER}\$" "${FILE_GROUP}" | awk -v asn="${NUMBER}" '{printf "route %s unreachable { asn_origin = %s; };\n", $1, asn}' >> "${FILE_IPV4}"
+			grep -E ".*:.* ${NUMBER}\$" "${FILE_GROUP}" | awk -v asn="${NUMBER}" '{printf "route %s unreachable { asn_origin = %s; };\n", $1, asn}' >> "${FILE_IPV6}"
 		done
 
 		FILE_PROTO="${DIR_CONF}/${GROUP_LC}.proto.${PROV}.conf"
@@ -79,9 +79,8 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			ipv4 {
 				table mixed4;
 				import filter {
-					bgp_community.add((group_main, tag_ip4));
-					bgp_community.add((group_main, tag_asn));
-					bgp_community.add((group_main, ${ID}));
+					bgp_large_community.add((bird_asn, tag_fam, 4));
+					bgp_large_community.add((bird_asn, tag_asn, ${ID}));
 					accept;
 				};
 				export none;
@@ -94,9 +93,8 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 			ipv6 {
 				table mixed6;
 				import filter {
-					bgp_community.add((group_main, tag_ip6));
-					bgp_community.add((group_main, tag_asn));
-					bgp_community.add((group_main, ${ID}));
+					bgp_large_community.add((bird_asn, tag_fam, 6));
+					bgp_large_community.add((bird_asn, tag_asn, ${ID}));
 					accept;
 				};
 				export none;
