@@ -75,7 +75,7 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 		FILE_PROTO="${DIR_CONF}/${GROUP_LC}.proto.${PROV}.conf"
 		cat <<EOF > "${FILE_PROTO}"
 protocol static s4_${PROV}_${GROUP_LC} {
-	description "${GROUP} AS ${NUMBERS} IPv4";
+	description "Static IPv4 ${GROUP} ID ${ID} AS ${NUMBERS}";
 	ipv4 {
 		table mixed4;
 		import filter {
@@ -89,7 +89,7 @@ protocol static s4_${PROV}_${GROUP_LC} {
 }
 
 protocol static s6_${PROV}_${GROUP_LC} {
-	description "${GROUP} AS ${NUMBERS} IPv6";
+	description "Static IPv6 ${GROUP} ID ${ID} AS ${NUMBERS}";
 	ipv6 {
 		table mixed6;
 		import filter {
