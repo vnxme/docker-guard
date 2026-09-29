@@ -79,7 +79,6 @@ protocol static s4_${PROV}_${GROUP_LC} {
 	ipv4 {
 		table mixed4;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_fam, 4));
 			bgp_large_community.add((bird_asn, tag_asn, ${ID}));
 			accept;
 		};
@@ -93,7 +92,6 @@ protocol static s6_${PROV}_${GROUP_LC} {
 	ipv6 {
 		table mixed6;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_fam, 6));
 			bgp_large_community.add((bird_asn, tag_asn, ${ID}));
 			accept;
 		};

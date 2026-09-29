@@ -58,8 +58,6 @@ Routes carry [large communities](https://www.rfc-editor.org/rfc/rfc8092) in the 
 | Community             | Meaning                                                                        |
 |-----------------------|--------------------------------------------------------------------------------|
 | `65000:0:<AS number>` | Origin AS number of a route from an AS group, e.g. `65000:0:15169`             |
-| `65000:1:4`           | IPv4 route                                                                     |
-| `65000:1:6`           | IPv6 route                                                                     |
 | `65000:10:<ID>`       | AS group, `<ID>` from [as.mapping.txt](bird/as.mapping.txt), e.g. `65000:10:240` Google |
 | `65000:11:<ID>`       | Country group, `<ID>` from [iso.mapping.txt](bird/iso.mapping.txt), e.g. `65000:11:643` Russia |
 | `65000:10:100`        | Custom static route (see [Custom routes](#custom-routes))                      |
@@ -134,7 +132,7 @@ The files in [bgp.conf.d](bird/bgp.conf.d/) open sessions to these providers:
 | `afn.conf` | [antifilter.network](https://antifilter.network)              | 65444     | 51.75.66.20      | `afn4`, `afn6`  |
 | `ref.conf` | [Re-filter](https://github.com/1andrevich/Re-filter-lists)    | 65412     | 165.22.127.207   | `ref4`, `ref6`  |
 
-Their routes are kept in separate tables that you can browse in the looking glass; they are not passed on to your peers. Each route keeps the provider's own communities (listed at the top of each file) and gets `65000:1:4` or `65000:1:6` plus `65000:<provider AS>:0`.
+Their routes are kept in separate tables that you can browse in the looking glass; they are not passed on to your peers. Each route keeps the provider's own communities (listed at the top of each file) and gets `65000:<provider AS>:0`.
 
 Mount an empty file over one to disable it. To add a provider, copy one of the files, rename the `afd` suffix throughout, and set `asn_*` and `ip_*` at the top to the provider's AS number and address.
 
