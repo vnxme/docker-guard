@@ -33,7 +33,7 @@ The container refuses to start if a value is not a valid AS number or router ID.
 
 ## Peering
 
-The server waits for peers to connect (passive, multihop eBGP). An IPv4 session receives IPv4 routes, an IPv6 session receives IPv6 routes. The server's AS number must differ from yours.
+The server waits for peers to connect (passive, multihop eBGP). An IPv4 session receives IPv4 routes, an IPv6 session receives IPv6 routes. The server's AS number must differ from yours. Graceful restart is enabled, so a router that supports it keeps the routes for up to 120 seconds while the container restarts.
 
 Example for a BIRD client that only takes Google and Russia prefixes:
 
