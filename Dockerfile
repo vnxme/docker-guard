@@ -1,7 +1,6 @@
-FROM --platform=${TARGETPLATFORM:-linux/amd64} xddxdd/bird-lg-go:latest AS frontend
-FROM --platform=${TARGETPLATFORM:-linux/amd64} xddxdd/bird-lgproxy-go:latest AS proxy
-
-FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine:3.24
+FROM xddxdd/bird-lg-go:latest AS frontend
+FROM xddxdd/bird-lgproxy-go:latest AS proxy
+FROM alpine:3.24
 
 RUN apk add --no-cache bird curl supervisor traceroute tzdata && mkdir -p /etc/bird && mv /etc/bird.conf /etc/bird/sample.conf
 
