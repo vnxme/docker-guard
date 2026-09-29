@@ -9,7 +9,7 @@ COPY --from=proxy /proxy /usr/local/bin/proxy
 
 COPY supervisord.conf /etc/supervisord.conf
 COPY bird/ /etc/bird/
-RUN chmod 755 /etc/bird/*.sh; ls -la /etc/bird/
+RUN chmod 755 /etc/bird/*.sh; ls -la /etc/bird/; bird --version
 
 ENTRYPOINT ["/etc/bird/env.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
