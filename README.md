@@ -85,6 +85,8 @@ The Microsoft group includes its subsidiaries (GitHub, LinkedIn, Skype, Activisi
 
 Enabled by default: Belarus (112), Kazakhstan (398), Russia (643), Ukraine (804). All other countries are listed in [iso.mapping.txt](bird/iso.mapping.txt) and commented out.
 
+A line may list several countries, which makes a group sent under one ID. The file ends with commented-out groups: EU27 (1000), EEA (1001), Schengen (1002), CIS (1003), Nordic (1004) and Baltic (1005). A prefix of a country that is also enabled on its own carries both IDs.
+
 ## Customization
 
 Configuration lives in `/etc/bird` inside the container; the defaults are in the [bird](bird/) directory of this repository. Replace any file by mounting your own version over it.
@@ -110,7 +112,7 @@ Both files have one group per line, `ID Name items`:
 - `#` starts a comment, either on its own line or after an entry.
 - `Name` may only contain letters, digits and `_`, and must be unique across both files.
 - IDs are numbers from 0 to 4294967295; `100` in `as.mapping.txt` is taken by custom static routes.
-- IDs in `iso.mapping.txt` are by convention the ISO 3166-1 numeric codes.
+- IDs in `iso.mapping.txt` are by convention the ISO 3166-1 numeric codes for single countries, and 1000 or higher for groups of countries.
 
 Changes are applied on the next update, or immediately after `docker restart guard`.
 
