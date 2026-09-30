@@ -146,6 +146,7 @@ protocol static s4_${PROV}_${GROUP_LC} {
 		table mixed4;
 		import filter {
 			bgp_large_community.add((bird_asn, tag_asn_group, ${ID}));
+			if defined(asn_origin) then bgp_large_community.add((bird_asn, tag_asn_origin, asn_origin));
 			accept;
 		};
 		export none;
@@ -159,6 +160,7 @@ protocol static s6_${PROV}_${GROUP_LC} {
 		table mixed6;
 		import filter {
 			bgp_large_community.add((bird_asn, tag_asn_group, ${ID}));
+			if defined(asn_origin) then bgp_large_community.add((bird_asn, tag_asn_origin, asn_origin));
 			accept;
 		};
 		export none;
@@ -213,6 +215,7 @@ protocol static s4_${PROV}_${GROUP_LC} {
 		table mixed4;
 		import filter {
 			bgp_large_community.add((bird_asn, tag_geo_group, ${ID}));
+			if defined(geo_origin) then bgp_large_community.add((bird_asn, tag_geo_origin, geo_origin));
 			accept;
 		};
 		export none;
@@ -226,6 +229,7 @@ protocol static s6_${PROV}_${GROUP_LC} {
 		table mixed6;
 		import filter {
 			bgp_large_community.add((bird_asn, tag_geo_group, ${ID}));
+			if defined(geo_origin) then bgp_large_community.add((bird_asn, tag_geo_origin, geo_origin));
 			accept;
 		};
 		export none;
