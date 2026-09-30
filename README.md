@@ -55,14 +55,14 @@ The routes' next hop is the server itself, so in practice your import filter sho
 
 Routes carry [large communities](https://www.rfc-editor.org/rfc/rfc8092) in the form `(ASN, tag, value)`, where `ASN` is `BIRD_ASN` (32-bit AS numbers work). The values below assume the default `BIRD_ASN=65000`.
 
-| Community             | Meaning                                                                        |
-|-----------------------|--------------------------------------------------------------------------------|
-| `65000:0:<AS number>` | Origin AS number of a route from an AS group, e.g. `65000:0:15169`             |
-| `65000:1:<country ID>`        | Origin country ID of a route from a country group, `<ID>` of that country's own line in [iso.mapping.txt](bird/iso.mapping.txt) (enabled or commented out), e.g. `65000:1:276` Germany via EU27 |
-| `65000:10:<AS group ID>`       | AS group, `<ID>` from [as.mapping.txt](bird/as.mapping.txt), e.g. `65000:10:240` Google |
-| `65000:11:<country group ID>`       | Country group, `<ID>` from [iso.mapping.txt](bird/iso.mapping.txt), e.g. `65000:11:1000` EU-27 |
-| `65000:10:100`        | Custom static route (see [Custom routes](#custom-routes))                      |
-| `65000:<provider AS>:0` | Route from an [upstream BGP feed](#upstream-bgp-feeds), e.g. `65000:65432:0`; looking glass only |
+| Community                     | Meaning |
+|-------------------------------|---------|
+| `65000:0:<AS number>`         | Origin AS number of a route from an AS group, e.g. `65000:0:15169` |
+| `65000:1:<country ID>`        | Origin country of a route from a country or a group of countries: the ID of that country's own line in [iso.mapping.txt](bird/iso.mapping.txt), enabled or commented out, e.g. `65000:1:643` Russia, or `65000:1:276` Germany via EU27 |
+| `65000:10:<AS group ID>`      | AS group, ID from [as.mapping.txt](bird/as.mapping.txt), e.g. `65000:10:240` Google |
+| `65000:11:<country group ID>` | Country or group of countries, ID from [iso.mapping.txt](bird/iso.mapping.txt), e.g. `65000:11:643` Russia, `65000:11:1000` EU27 |
+| `65000:10:100`                | Custom static route (see [Custom routes](#custom-routes)) |
+| `65000:<provider AS>:0`       | Route from an [upstream BGP feed](#upstream-bgp-feeds), e.g. `65000:65432:0`; looking glass only |
 
 ### AS groups
 
@@ -125,6 +125,15 @@ Files named `*.ipv4.generic.conf` and `*.ipv6.generic.conf` in `/etc/bird/static
 route 198.51.100.0/24 unreachable;
 ```
 
+A route may also set its origin AS number or country ID, which adds the matching `65000:0:…` or `65000:1:…` community:
+
+```
+route 198.51.100.0/24 unreachable { asn_origin = 64500; };
+route 203.0.113.0/24 unreachable { geo_origin = 276; };
+```
+
+The prefixes above are documentation ranges, which the server filters out like other bogons; use real prefixes.
+
 ### Upstream BGP feeds
 
 The files in [bgp.conf.d](bird/bgp.conf.d/) open sessions to these providers:
@@ -137,7 +146,7 @@ The files in [bgp.conf.d](bird/bgp.conf.d/) open sessions to these providers:
 
 Their routes are kept in separate tables that you can browse in the looking glass; they are not passed on to your peers. Each route keeps the provider's own communities (listed at the top of each file) and gets `65000:<provider AS>:0`.
 
-Mount an empty file over one to disable it. To add a provider, copy one of the files, rename the `afd` suffix throughout, and set `asn_*` and `ip_*` at the top to the provider's AS number and address.
+Mount an empty file over one to disable it. To add a provider, copy one of the files, rename the `afd` suffix throughout, and set `asn_*` and `ip4_*` at the top to the provider's AS number and address.
 
 ## How it works
 
