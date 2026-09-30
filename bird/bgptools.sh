@@ -79,8 +79,8 @@ protocol static s4_${PROV}_${GROUP_LC} {
 	ipv4 {
 		table mixed4;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_asn_group, ${ID}));
-			if defined(asn_origin) then bgp_large_community.add((bird_asn, tag_asn_origin, asn_origin));
+			bgp_large_community.add((asn_bird, tag_asn_group, ${ID}));
+			if defined(asn_origin) then bgp_large_community.add((asn_bird, tag_asn_origin, asn_origin));
 			accept;
 		};
 		export none;
@@ -93,8 +93,8 @@ protocol static s6_${PROV}_${GROUP_LC} {
 	ipv6 {
 		table mixed6;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_asn_group, ${ID}));
-			if defined(asn_origin) then bgp_large_community.add((bird_asn, tag_asn_origin, asn_origin));
+			bgp_large_community.add((asn_bird, tag_asn_group, ${ID}));
+			if defined(asn_origin) then bgp_large_community.add((asn_bird, tag_asn_origin, asn_origin));
 			accept;
 		};
 		export none;

@@ -39,8 +39,8 @@ for OCTET in "${A}" "${B}" "${C}" "${D}"; do
 done
 
 cat <<-EOF > "${FILE_ENV}"
-define bird_asn = ${BIRD_ASN};
-define bird_ip = ${BIRD_IP};
+define asn_bird = ${BIRD_ASN};
+define ip4_bird = ${BIRD_IP};
 EOF
 
 exec "$@"
