@@ -58,8 +58,9 @@ Routes carry [large communities](https://www.rfc-editor.org/rfc/rfc8092) in the 
 | Community             | Meaning                                                                        |
 |-----------------------|--------------------------------------------------------------------------------|
 | `65000:0:<AS number>` | Origin AS number of a route from an AS group, e.g. `65000:0:15169`             |
-| `65000:10:<ID>`       | AS group, `<ID>` from [as.mapping.txt](bird/as.mapping.txt), e.g. `65000:10:240` Google |
-| `65000:11:<ID>`       | Country group, `<ID>` from [iso.mapping.txt](bird/iso.mapping.txt), e.g. `65000:11:643` Russia |
+| `65000:1:<country ID>`        | Origin country ID of a route from a country group, `<ID>` of that country's own line in [iso.mapping.txt](bird/iso.mapping.txt) (enabled or commented out), e.g. `65000:1:276` Germany via EU27 |
+| `65000:10:<AS group ID>`       | AS group, `<ID>` from [as.mapping.txt](bird/as.mapping.txt), e.g. `65000:10:240` Google |
+| `65000:11:<country group ID>`       | Country group, `<ID>` from [iso.mapping.txt](bird/iso.mapping.txt), e.g. `65000:11:1000` EU-27 |
 | `65000:10:100`        | Custom static route (see [Custom routes](#custom-routes))                      |
 | `65000:<provider AS>:0` | Route from an [upstream BGP feed](#upstream-bgp-feeds), e.g. `65000:65432:0`; looking glass only |
 

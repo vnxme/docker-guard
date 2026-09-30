@@ -104,6 +104,10 @@ if [ -s "${FILE_EXTRACT}" ] && ! tar -xzf "${FILE_GEO}" -C "${DIR_PROV}" -T "${F
 	echo "Warning: Some entries of ${FILE_EXTRACT} can't be extracted from ${FILE_GEO}."
 fi
 
+# Country IDs for geo_origin, taken from the single-country lines of the mapping file, commented out or not
+FILE_ISO_IDS="${DIR_PROV}/iso.ids.txt"
+sed -nE 's/^[#[:space:]]*([0-9]+)[[:space:]]+[A-Za-z0-9_]+[[:space:]]+([A-Za-z]{2})[[:space:]]*(#.*)?$/\2 \1/p' "${FILE_ISO_MAP}" | tr '[:upper:]' '[:lower:]' > "${FILE_ISO_IDS}"
+
 while IFS= read -r LINE || [ -n "${LINE}" ]; do
 	LINE="${LINE%"${CR}"}" # strip CR of CRLF line endings
 	LINE="${LINE%%#*}" # strip comments
@@ -141,7 +145,7 @@ protocol static s4_${PROV}_${GROUP_LC} {
 	ipv4 {
 		table mixed4;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_asn, ${ID}));
+			bgp_large_community.add((bird_asn, tag_asn_group, ${ID}));
 			accept;
 		};
 		export none;
@@ -154,7 +158,7 @@ protocol static s6_${PROV}_${GROUP_LC} {
 	ipv6 {
 		table mixed6;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_asn, ${ID}));
+			bgp_large_community.add((bird_asn, tag_asn_group, ${ID}));
 			accept;
 		};
 		export none;
@@ -183,15 +187,21 @@ while IFS= read -r LINE || [ -n "${LINE}" ]; do
 
 		for CODE in $(echo "${CODES}" | tr "," "\n"); do
 			CODE_LC="$(echo "${CODE}" | tr '[:upper:]' '[:lower:]')"
+			echo "# ${CODE}" | tee -a "${FILE_IPV4}" "${FILE_IPV6}" > /dev/null
+
+			GEO="$(awk -v code="${CODE_LC}" '$1 == code { print $2; exit }' "${FILE_ISO_IDS}")"
+			if [ -z "${GEO}" ]; then
+				echo "Warning: ${CODE} has no single-country line in ${FILE_ISO_MAP}, its routes get no geo_origin."
+			fi
 
 			FILE_TAB="${DIR_PROV}/country/${CODE_LC}/${CODE_LC}-ipv4.txt"
 			if [ -s "${FILE_TAB}" ]; then
-				grep -E "^[^#]" "${FILE_TAB}" | awk '{printf "route %s unreachable;\n", $1}' >> "${FILE_IPV4}"
+				grep -E "^[^#]" "${FILE_TAB}" | awk -v geo="${GEO}" '{if (geo != "") printf "route %s unreachable { geo_origin = %s; };\n", $1, geo; else printf "route %s unreachable;\n", $1}' >> "${FILE_IPV4}"
 			fi
 
 			FILE_TAB="${DIR_PROV}/country/${CODE_LC}/${CODE_LC}-ipv6.txt"
 			if [ -s "${FILE_TAB}" ]; then
-				grep -E "^[^#]" "${FILE_TAB}" | awk '{printf "route %s unreachable;\n", $1}' >> "${FILE_IPV6}"
+				grep -E "^[^#]" "${FILE_TAB}" | awk -v geo="${GEO}" '{if (geo != "") printf "route %s unreachable { geo_origin = %s; };\n", $1, geo; else printf "route %s unreachable;\n", $1}' >> "${FILE_IPV6}"
 			fi
 		done
 
@@ -202,7 +212,7 @@ protocol static s4_${PROV}_${GROUP_LC} {
 	ipv4 {
 		table mixed4;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_geo, ${ID}));
+			bgp_large_community.add((bird_asn, tag_geo_group, ${ID}));
 			accept;
 		};
 		export none;
@@ -215,7 +225,7 @@ protocol static s6_${PROV}_${GROUP_LC} {
 	ipv6 {
 		table mixed6;
 		import filter {
-			bgp_large_community.add((bird_asn, tag_geo, ${ID}));
+			bgp_large_community.add((bird_asn, tag_geo_group, ${ID}));
 			accept;
 		};
 		export none;
