@@ -1,4 +1,12 @@
-FROM xddxdd/bird-lg-go:latest AS frontend
+# syntax=docker/dockerfile:1
+
+# Looking glass frontend, built from the fork with the truncated routes fix
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine3.24 AS frontend
+ARG TARGETOS TARGETARCH TARGETVARIANT
+ADD https://github.com/vnxme/bird-lg-go.git#fix-truncated-routes /src
+WORKDIR /src/frontend
+RUN CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" GOARM="${TARGETVARIANT#v}" go build -ldflags "-w -s" -o /frontend
+
 FROM xddxdd/bird-lgproxy-go:latest AS proxy
 FROM alpine:3.24
 

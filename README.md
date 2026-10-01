@@ -157,7 +157,7 @@ The container runs [supervisord](http://supervisord.org/) with four programs:
 | `bird`     | The BGP server                                                                        |
 | `updater`  | Every 24 hours runs [ipverse.sh](bird/ipverse.sh), which downloads the prefix lists and generates BIRD config, then reloads BIRD; retries every 5 minutes on failure |
 | `proxy`    | Looking glass backend, talks to BIRD (listens on `127.0.0.1:8000` only)               |
-| `frontend` | Looking glass web interface on port 80                                                |
+| `frontend` | Looking glass web interface on port 80, built from the [vnxme/bird-lg-go](https://github.com/vnxme/bird-lg-go/tree/fix-truncated-routes) fork (branch `fix-truncated-routes`) |
 
 [bgptools.sh](bird/bgptools.sh) is an alternative generator that uses the [bgp.tools](https://bgp.tools) routing table instead of ipverse; it is included but not run by default.
 
