@@ -1,6 +1,6 @@
-# docker-guard
+# BGP Guard
 
-A Docker image of **BGP Guard**: a [BIRD](https://bird.network.cz/) route server that publishes the IP prefixes of popular services and countries over BGP, tagged with large communities. Your router peers with it, picks the groups it needs by community, and routes that traffic however you like, for example through a VPN tunnel.
+**BGP Guard** is a [BIRD](https://bird.network.cz/) route server that publishes the IP prefixes of popular services and countries over BGP, tagged with large communities. Your router peers with it, picks the groups it needs by community, and routes that traffic however you like, for example through a VPN tunnel. The app is ditributed as a Docker image.
 
 - Prefixes of 30+ services (Google, Microsoft, Amazon, Cloudflare, Telegram, …) grouped by the AS numbers they announce from
 - Prefixes of countries, selectable from the full ISO 3166-1 list
